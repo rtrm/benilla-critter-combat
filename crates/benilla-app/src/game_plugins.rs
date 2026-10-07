@@ -13,6 +13,7 @@
 use bevy::app::PluginGroupBuilder;
 use bevy::prelude::*;
 
+use crate::battle_markers::BattleMarkersPlugin;
 use crate::blob_shadow::BlobShadowPlugin;
 use crate::bowstring::BowstringPlugin;
 use crate::camera_shake::CameraShakePlugin;
@@ -110,6 +111,9 @@ impl PluginGroup for GamePlugins {
             .add(crate::weapon_trail::WeaponTrailPlugin)
             .add(FishingLinePlugin)
             .add(QuestMarkersPlugin)
+            // Same overhead-attach dependencies as the questgiver markers just above (NameCache,
+            // GuidIndex, BoneAttach, model forms, rig palettes), so registered right beside them.
+            .add(BattleMarkersPlugin)
             .add(crate::pipe_warm::plugin)
             .add(EntitiesPlugin)
             // The combat log, ahead of the animation layer, whose two shared kinds run second.

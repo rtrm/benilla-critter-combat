@@ -26,6 +26,7 @@ mod area_trigger;
 #[cfg(feature = "dev")]
 mod asset_churn;
 mod aura_visual;
+mod battle_markers;
 mod bindings;
 mod blob_shadow;
 mod bowstring;

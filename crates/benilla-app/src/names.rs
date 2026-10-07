@@ -31,8 +31,12 @@ use crate::query_cache::QueryCache;
 /// | `0x20` | `0x623b70` | [`MORE_AUDIBLE`] |
 /// | `0x40` | `0x60d840` | SPELL_ATTACKABLE / no harmful vertex colouring |
 /// | `0x80` | `0x613230` = `CanInteractWhileDead` | INTERACT_WHILE_DEAD |
+/// | `0x100` | n/a - this fork only | [`BATTLEABLE`] |
 ///
-/// The names of `0x1`-`0x40` follow vmangos `CreatureDefines.h:146-152`.
+/// The names of `0x1`-`0x40` follow vmangos `CreatureDefines.h:146-152`. `0x100` has no reference
+/// getter: it's Critter Combat's own (ARCHITECTURE.md), set server-side from `pet_battle_wild`
+/// membership, not from any creature_template column the reference ever reads. It starts one bit
+/// above `0x80` to stay clear of that one's own (if unimplemented here) documented meaning.
 pub(crate) mod type_flags {
     /// `0x8`: the reference skips the victim wound flinch for it (`0x60ea9f` in `0x60ea70`); the
     /// blood spurt and the floating combat text still play.
@@ -44,6 +48,10 @@ pub(crate) mod type_flags {
     /// `0x20`: the pass-2 election keeps an off-screen creature ticking so its combat stays
     /// audible (`0x607da0`'s `0x623b70` arm).
     pub(crate) const MORE_AUDIBLE: u32 = 0x20;
+
+    /// `0x100`: Critter Combat's wild-and-capturable flag ([`crate::battle_markers`]'s crossed
+    /// swords read this). vmangos `CreatureDefines.h`'s `CREATURE_TYPEFLAGS_BATTLEABLE`.
+    pub(crate) const BATTLEABLE: u32 = 0x100;
 }
 
 /// The name cache: players by guid, creatures by template entry, pets by pet number.
