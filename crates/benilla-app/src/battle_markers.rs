@@ -12,10 +12,11 @@
 //! [`benilla_world::doodad_anim::spawn_anim_host`]'s own default loop (anim 0); nothing here needs
 //! to arm it.
 //!
-//! Two copies of the model are spawned per marker, rotated to opposite diagonals around the seat's
-//! local forward axis so they form an X. The exact angle and axis are a first guess - nothing in
-//! this module could be checked by eye while it was written, so tune [`CROSS_HALF_ANGLE_DEG`] (and
-//! swap the rotation axis if the blades lie flat instead of crossing face-on) once it renders live.
+//! Two copies of the model are spawned per marker, rotated to opposite diagonals around the
+//! blade's own thickness axis (Bevy local X here - see `build_markers`, measured off the raw M2's
+//! vertex bounds rather than guessed) so they swing apart into an X while keeping their broad face
+//! toward the viewer. The exact angle ([`CROSS_HALF_ANGLE_DEG`]) is still a first guess and may
+//! want live tuning, but the axis itself is not.
 
 use std::collections::{HashMap, HashSet};
 
@@ -29,13 +30,21 @@ use crate::entities::BoneAttach;
 use crate::names::{type_flags, NameCache};
 use crate::net::{Guid, ObjectStore};
 
+const MODEL_DIR: &str = "Item\\ObjectComponents\\Weapon";
+
 /// `Item\ObjectComponents\Weapon\Sword_1H_Short_A_01.m2` - verified present in the real 1.12.1
 /// MPQ data (`model.MPQ`) before writing this, so a blank marker would mean a seat/attach problem
 /// here, not a missing or mis-cased asset path.
 const MARKER_MODEL: &str = "Item\\ObjectComponents\\Weapon\\Sword_1H_Short_A_01.m2";
 
-/// Half the angle between the two blades, around the seat's local Z. A first guess - see the
-/// module doc.
+/// The blade's `ItemDisplayInfo.dbc` object-skin texture (M2 type 2, `sub.texture` always `None`
+/// for it - see `build_markers`). "Blue" is the most common of the model's real skin variants
+/// (Rusty/Green/Blue/Black/Copper across its ~25 displays); any would do since nothing here
+/// simulates a specific equipped item.
+const MARKER_TEXTURE: &str = "Sword_1H_Short_A_01Blue";
+
+/// Half the angle between the two blades, around the blade's own thickness axis (Bevy local X).
+/// A first guess for the angle itself - see the module doc.
 const CROSS_HALF_ANGLE_DEG: f32 = 45.0;
 
 /// One live marker's root; unlike [`crate::quest_markers::QuestMarkerRoot`] there is only ever one
@@ -138,6 +147,7 @@ fn sync_markers(
 fn build_markers(
     mut commands: Commands,
     mut roots: Query<(Entity, &mut BattleMarkerRoot)>,
+    asset_server: Res<AssetServer>,
     m2s: Res<Assets<M2Model>>,
     mut forms: ResMut<benilla_world::model_forms::ModelForms>,
     mut mesh_assets: ResMut<Assets<Mesh>>,
@@ -207,14 +217,27 @@ fn build_markers(
 
         let built = forms.slices(&marker.handle);
         let (stat_forms, skin_forms) = (built.stat, built.skin.unwrap_or(&[]));
-        // The two blades: same meshes, opposite diagonal rotations so they cross into an X.
+        let texture = asset_server.load::<Image>(benilla_assets::skin_url(
+            MODEL_DIR,
+            MARKER_TEXTURE,
+        ));
+        // The two blades: same meshes, opposite diagonal rotations so they cross into an X. Bevy
+        // local X is the blade's thickness axis here (measured off the raw M2: WoW model space has
+        // length on X, width on Z, thickness on Y, and `wow_to_bevy` sends WoW Y to Bevy X) -
+        // rotating around it swings the blade like a clock hand while keeping its broad face
+        // toward the viewer, instead of spinning it edge-on.
         let cross_rotations = [
-            Quat::from_rotation_z(CROSS_HALF_ANGLE_DEG.to_radians()),
-            Quat::from_rotation_z(-CROSS_HALF_ANGLE_DEG.to_radians()),
+            Quat::from_rotation_x(CROSS_HALF_ANGLE_DEG.to_radians()),
+            Quat::from_rotation_x(-CROSS_HALF_ANGLE_DEG.to_radians()),
         ];
         for rotation in cross_rotations {
             for (pi, sub) in model.submeshes.iter().enumerate() {
-                let Some(material) = mats.steady(sub, sub.texture.clone(), 0) else {
+                // The blade's own batch is an `Object` skin-slot (M2 texture type 2): the raw M2
+                // carries no embedded texture for it at all (`sub.texture` is always `None`) since
+                // that slot is normally filled per equipped item at spawn - there's no "equipped
+                // item" here, so it's loaded directly instead, the common "Blue" skin variant
+                // (`ItemDisplayInfo.dbc` entries 1773/5159/10967/5147/... all pair it the same way).
+                let Some(material) = mats.steady(sub, Some(texture.clone()), 0) else {
                     continue; // no shared light buffer yet
                 };
                 let use_rig = marker_slot != 0;
