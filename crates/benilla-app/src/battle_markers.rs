@@ -52,9 +52,17 @@ const MARKER_TEXTURE: &str = "Sword_1H_Short_A_01Blue";
 /// guess for the angle itself - see the module doc.
 const CROSS_LEAN_DEG: f32 = 45.0;
 
-/// How far up the seat (local Y, nothing on X/Z) each blade sits, so the pair hangs above the
-/// head rather than through it. A first guess - see the module doc.
+/// Where the two blades' middles meet: straight up the seat (local Y, nothing on X/Z) so the pair
+/// hangs above the head. A first guess for the height - see the module doc.
 const CROSS_LIFT_LOCAL_Y: f32 = 0.35;
+
+/// The blade's own midpoint along its native length (local Z, before either copy's rotation) -
+/// the point each copy's rotation+translation sends to [`CROSS_LIFT_LOCAL_Y`], so the two blades
+/// cross through their middles there instead of at the grip (the model's own local origin, where
+/// it binds to a hand bone - a bare rotation crosses there instead). Measured off the raw M2's
+/// vertex bounds (`dump_verts Sword_1H_Short_A_01.m2`): WoW model-space X (length) runs -0.206 to
+/// +0.889, midpoint +0.3415, and `wow_to_bevy` sends WoW X to Bevy -Z.
+const BLADE_MIDPOINT_LOCAL_Z: f32 = -0.3415;
 
 /// One live marker's root; unlike [`crate::quest_markers::QuestMarkerRoot`] there is only ever one
 /// model, so no `path`/status bookkeeping is needed.
@@ -241,12 +249,19 @@ fn build_markers(
             Vec3::new(-lean.sin(), lean.cos(), 0.0),
         ]
         .map(|target_tip| Quat::from_rotation_arc(native_tip, target_tip))
-        .map(|rotation| Transform {
-            // Straight up the seat's local Y, nothing on X/Z: simpler than pivoting the rotation
-            // through the blade's own midpoint, and the seat already sits at the head.
-            translation: Vec3::new(0.0, CROSS_LIFT_LOCAL_Y, 0.0),
-            rotation,
-            scale: Vec3::ONE,
+        .map(|rotation| {
+            // Solve for the translation that sends this blade's own midpoint to the shared
+            // crossing point: `rotation * blade_mid + translation = cross_point`. Both copies
+            // target the same point, so their middles meet there - purely on local Y, nothing on
+            // X/Z - instead of each rotating around its own origin (the grip) and only that
+            // shared grip point lining up.
+            let blade_mid = Vec3::new(0.0, 0.0, BLADE_MIDPOINT_LOCAL_Z);
+            let cross_point = Vec3::new(0.0, CROSS_LIFT_LOCAL_Y, 0.0);
+            Transform {
+                translation: cross_point - rotation * blade_mid,
+                rotation,
+                scale: Vec3::ONE,
+            }
         });
         for transform in cross_transforms {
             for (pi, sub) in model.submeshes.iter().enumerate() {
