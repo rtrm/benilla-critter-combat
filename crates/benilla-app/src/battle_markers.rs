@@ -52,11 +52,9 @@ const MARKER_TEXTURE: &str = "Sword_1H_Short_A_01Blue";
 /// guess for the angle itself - see the module doc.
 const CROSS_LEAN_DEG: f32 = 45.0;
 
-/// The blade's midpoint along its own length (Bevy local Z), the rotation pivot so the two
-/// copies cross through the blades rather than at the grip. Measured off the raw M2's vertex
-/// bounds (`dump_verts Sword_1H_Short_A_01.m2`): WoW model-space X (length) runs -0.206 to
-/// +0.889, midpoint +0.3415, and `wow_to_bevy` sends WoW X to Bevy -Z.
-const BLADE_MIDPOINT_LOCAL_Z: f32 = -0.3415;
+/// How far up the seat (local Y, nothing on X/Z) each blade sits, so the pair hangs above the
+/// head rather than through it. A first guess - see the module doc.
+const CROSS_LIFT_LOCAL_Y: f32 = 0.35;
 
 /// One live marker's root; unlike [`crate::quest_markers::QuestMarkerRoot`] there is only ever one
 /// model, so no `path`/status bookkeeping is needed.
@@ -243,18 +241,12 @@ fn build_markers(
             Vec3::new(-lean.sin(), lean.cos(), 0.0),
         ]
         .map(|target_tip| Quat::from_rotation_arc(native_tip, target_tip))
-        .map(|rotation| {
-            // The model's own origin sits at the grip (where it binds to a hand bone), not the
-            // blade's middle - a bare rotation pivots there and crosses the two copies at the hilt
-            // instead of through the blades. BLADE_MIDPOINT_LOCAL_Z offsets the pivot to the
-            // blade's visual center instead, measured off the raw M2's vertex bounds (`rotation *
-            // (p - pivot) + pivot`, i.e. translation `pivot - rotation * pivot`).
-            let pivot = Vec3::new(0.0, 0.0, BLADE_MIDPOINT_LOCAL_Z);
-            Transform {
-                translation: pivot - rotation * pivot,
-                rotation,
-                scale: Vec3::ONE,
-            }
+        .map(|rotation| Transform {
+            // Straight up the seat's local Y, nothing on X/Z: simpler than pivoting the rotation
+            // through the blade's own midpoint, and the seat already sits at the head.
+            translation: Vec3::new(0.0, CROSS_LIFT_LOCAL_Y, 0.0),
+            rotation,
+            scale: Vec3::ONE,
         });
         for transform in cross_transforms {
             for (pi, sub) in model.submeshes.iter().enumerate() {
