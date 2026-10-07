@@ -12,11 +12,15 @@
 //! [`benilla_world::doodad_anim::spawn_anim_host`]'s own default loop (anim 0); nothing here needs
 //! to arm it.
 //!
-//! Two copies of the model are spawned per marker, rotated to opposite diagonals around the
-//! blade's own thickness axis (Bevy local X here - see `build_markers`, measured off the raw M2's
-//! vertex bounds rather than guessed) so they swing apart into an X while keeping their broad face
-//! toward the viewer. The exact angle ([`CROSS_HALF_ANGLE_DEG`]) is still a first guess and may
-//! want live tuning, but the axis itself is not.
+//! Two copies of the model are spawned per marker. The model's own authored orientation points
+//! its blade along whichever way the critter faces (its unrotated local -Z, confirmed by live
+//! testing) rather than up, so each copy's rotation does two things at once (`build_markers`):
+//! aims the tip from that native forward direction to a lean off vertical (local +Y), split left
+//! and right (local ±X) by [`CROSS_LEAN_DEG`] so the pair reads as an X/V above the head regardless
+//! of facing, computed directly as "rotate this tip direction to that one"
+//! ([`Quat::from_rotation_arc`]) rather than composed axis spins, since the blade's own length,
+//! width and thickness axes (measured off the raw M2's vertex bounds, not guessed) don't line up
+//! with any single axis you'd want to spin a now-reoriented copy around a second time.
 
 use std::collections::{HashMap, HashSet};
 
@@ -43,9 +47,10 @@ const MARKER_MODEL: &str = "Item\\ObjectComponents\\Weapon\\Sword_1H_Short_A_01.
 /// simulates a specific equipped item.
 const MARKER_TEXTURE: &str = "Sword_1H_Short_A_01Blue";
 
-/// Half the angle between the two blades, around the blade's own thickness axis (Bevy local X).
-/// A first guess for the angle itself - see the module doc.
-const CROSS_HALF_ANGLE_DEG: f32 = 45.0;
+/// Each blade's lean from vertical (local +Y), fanned left/right (local ±X) so the pair forms an
+/// X/V above the head instead of lying along whichever way the critter happens to face. A first
+/// guess for the angle itself - see the module doc.
+const CROSS_LEAN_DEG: f32 = 45.0;
 
 /// The blade's midpoint along its own length (Bevy local Z), the rotation pivot so the two
 /// copies cross through the blades rather than at the grip. Measured off the raw M2's vertex
@@ -227,26 +232,29 @@ fn build_markers(
             MODEL_DIR,
             MARKER_TEXTURE,
         ));
-        // The two blades: same meshes, opposite diagonal rotations so they cross into an X. Bevy
-        // local X is the blade's thickness axis here (measured off the raw M2: WoW model space has
-        // length on X, width on Z, thickness on Y, and `wow_to_bevy` sends WoW Y to Bevy X) -
-        // rotating around it swings the blade like a clock hand while keeping its broad face
-        // toward the viewer, instead of spinning it edge-on.
-        //
-        // The model's own origin sits at the grip (where it binds to a hand bone), not the blade's
-        // middle - a bare rotation pivots there and crosses the two copies at the hilt instead of
-        // through the blades. BLADE_MIDPOINT_LOCAL_Z offsets the pivot to the blade's visual
-        // center instead, measured off the same raw M2 vertex bounds (`rotation * (p - pivot) +
-        // pivot`, i.e. translation `pivot - rotation * pivot`).
-        let pivot = Vec3::new(0.0, 0.0, BLADE_MIDPOINT_LOCAL_Z);
+        // The two blades: same mesh, each rotated from its native "points the way the critter
+        // faces" orientation (local -Z, confirmed live) to lean off vertical and fan left/right -
+        // see the module doc for why this is one direct tip-to-tip rotation per copy rather than a
+        // composed axis spin.
+        let native_tip = Vec3::NEG_Z;
+        let lean = CROSS_LEAN_DEG.to_radians();
         let cross_transforms = [
-            Quat::from_rotation_x(CROSS_HALF_ANGLE_DEG.to_radians()),
-            Quat::from_rotation_x(-CROSS_HALF_ANGLE_DEG.to_radians()),
+            Vec3::new(lean.sin(), lean.cos(), 0.0),
+            Vec3::new(-lean.sin(), lean.cos(), 0.0),
         ]
-        .map(|rotation| Transform {
-            translation: pivot - rotation * pivot,
-            rotation,
-            scale: Vec3::ONE,
+        .map(|target_tip| Quat::from_rotation_arc(native_tip, target_tip))
+        .map(|rotation| {
+            // The model's own origin sits at the grip (where it binds to a hand bone), not the
+            // blade's middle - a bare rotation pivots there and crosses the two copies at the hilt
+            // instead of through the blades. BLADE_MIDPOINT_LOCAL_Z offsets the pivot to the
+            // blade's visual center instead, measured off the raw M2's vertex bounds (`rotation *
+            // (p - pivot) + pivot`, i.e. translation `pivot - rotation * pivot`).
+            let pivot = Vec3::new(0.0, 0.0, BLADE_MIDPOINT_LOCAL_Z);
+            Transform {
+                translation: pivot - rotation * pivot,
+                rotation,
+                scale: Vec3::ONE,
+            }
         });
         for transform in cross_transforms {
             for (pi, sub) in model.submeshes.iter().enumerate() {
