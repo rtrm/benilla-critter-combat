@@ -943,6 +943,30 @@ pub enum SessionEvent {
     UpdateLastInstance { map: u32 },
     /// Whether we hold any permanent bind (`SMSG_UPDATE_INSTANCE_OWNERSHIP`).
     UpdateInstanceOwnership { owns: bool },
+    /// A pet battle begins (`SMSG_PET_BATTLE_START`, critter-combat ARCHITECTURE.md).
+    PetBattleStart {
+        player_pet_name: String,
+        player_pet_level: u32,
+        player_pet_max_hp: u32,
+        player_pet_current_hp: u32,
+        player_abilities: [crate::messages::PetBattleAbility; 3],
+        enemy_name: String,
+        enemy_level: u32,
+        enemy_max_hp: u32,
+        enemy_current_hp: u32,
+        enemy_abilities: [crate::messages::PetBattleAbility; 3],
+        player_goes_first: bool,
+    },
+    /// One pet battle round resolved (`SMSG_PET_BATTLE_UPDATE`).
+    PetBattleUpdate {
+        player_ability_id: u32,
+        enemy_ability_id: u32,
+        player_acted_first: bool,
+        player_pet_current_hp: u32,
+        enemy_current_hp: u32,
+    },
+    /// The pet battle is over (`SMSG_PET_BATTLE_END`).
+    PetBattleEnd { player_won: bool },
     /// A duel challenge (`SMSG_DUEL_REQUESTED`), sent to both sides; `arbiter` is the flag object
     /// echoed on accept or cancel, and `challenger` is us when we asked.
     DuelRequested { arbiter: u64, challenger: u64 },

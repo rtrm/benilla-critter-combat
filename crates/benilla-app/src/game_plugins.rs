@@ -172,6 +172,7 @@ impl PluginGroup for GamePlugins {
             .add(UiUnitPlugin)
             .add(UiPartyPlugin)
             .add(UiDuelPlugin)
+            .add(crate::ui_pet_battle::PetBattlePlugin)
             .add(UiBinderPlugin)
             .add(UiDialogVerbsPlugin)
             .add(BattlefieldScorePlugin)

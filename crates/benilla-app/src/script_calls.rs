@@ -13,6 +13,8 @@ use bevy::prelude::*;
 
 use benilla_ui::script::{ScriptCall, UiScript};
 
+use crate::net::{ClientCommand, NetCommands};
+
 /// How deep calls made while applying a call may nest in one frame: a macro whose line presses a
 /// macro, and so on. Past it (a macro that presses itself), what is left waits for the next frame,
 /// so a frame always ends.
@@ -22,6 +24,7 @@ const MAX_NESTING: u8 = 8;
 #[allow(clippy::type_complexity)] // the appliers, one per owner of the state a call touches
 pub(crate) fn apply_script_calls(
     script: Option<NonSendMut<UiScript>>,
+    net_commands: Option<Res<NetCommands>>,
     mut appliers: ParamSet<(
         crate::target::ScriptSelect,
         crate::spell::ScriptCursor,
@@ -70,6 +73,13 @@ pub(crate) fn apply_script_calls(
             }
             ScriptCall::PetAction(slot) => appliers.p6().press_slot(slot),
             ScriptCall::PetOrder(packed) => appliers.p6().order(packed),
+            ScriptCall::CritterBattleUseAbility(ability_id) => {
+                if let Some(commands) = &net_commands {
+                    let _ = commands
+                        .0
+                        .send(ClientCommand::PetBattleUseAbility { ability_id });
+                }
+            }
         }
         // TryCast's attack pick can move the selection mid-cast (`0x6e4efb`), so a press held
         // there is picked and resumed before the next call reads the selection.

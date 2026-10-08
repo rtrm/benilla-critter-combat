@@ -574,6 +574,47 @@ pub fn decode(packet: ServerPacket) -> Vec<SessionEvent> {
             arbiter,
             challenger,
         }],
+        ServerPacket::PetBattleStart {
+            player_pet_name,
+            player_pet_level,
+            player_pet_max_hp,
+            player_pet_current_hp,
+            player_abilities,
+            enemy_name,
+            enemy_level,
+            enemy_max_hp,
+            enemy_current_hp,
+            enemy_abilities,
+            player_goes_first,
+        } => vec![SessionEvent::PetBattleStart {
+            player_pet_name,
+            player_pet_level,
+            player_pet_max_hp,
+            player_pet_current_hp,
+            player_abilities,
+            enemy_name,
+            enemy_level,
+            enemy_max_hp,
+            enemy_current_hp,
+            enemy_abilities,
+            player_goes_first,
+        }],
+        ServerPacket::PetBattleUpdate {
+            player_ability_id,
+            enemy_ability_id,
+            player_acted_first,
+            player_pet_current_hp,
+            enemy_current_hp,
+        } => vec![SessionEvent::PetBattleUpdate {
+            player_ability_id,
+            enemy_ability_id,
+            player_acted_first,
+            player_pet_current_hp,
+            enemy_current_hp,
+        }],
+        ServerPacket::PetBattleEnd { player_won } => {
+            vec![SessionEvent::PetBattleEnd { player_won }]
+        }
         // Lockouts; ownership narrows to a bool: the reference reads it with `test eax,eax`.
         ServerPacket::RaidInstanceMessage { message } => {
             vec![SessionEvent::RaidInstanceMessage { message }]

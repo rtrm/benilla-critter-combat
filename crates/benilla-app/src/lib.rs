@@ -155,6 +155,7 @@ mod ui_net;
 mod ui_party;
 mod ui_pass;
 mod ui_pet;
+mod ui_pet_battle;
 mod ui_pet_book;
 mod ui_pet_doll;
 mod ui_pet_stats;

@@ -21,3 +21,5 @@ SpellBookAdapters.xml
 ScriptLogFrame.xml
 # Our fixes to the stock Lua.
 FrameXMLFixes.xml
+# Critter Combat's battle action bar (critter-combat repo's ARCHITECTURE.md), a wholly new panel.
+CritterBattleFrame.xml

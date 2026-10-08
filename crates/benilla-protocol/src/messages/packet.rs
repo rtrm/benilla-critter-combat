@@ -1008,6 +1008,32 @@ pub enum ServerPacket {
     UpdateInstanceOwnership {
         owns: u32,
     },
+    /// `SMSG_PET_BATTLE_START` (critter-combat ARCHITECTURE.md): a battle begins.
+    PetBattleStart {
+        player_pet_name: String,
+        player_pet_level: u32,
+        player_pet_max_hp: u32,
+        player_pet_current_hp: u32,
+        player_abilities: [crate::messages::PetBattleAbility; 3],
+        enemy_name: String,
+        enemy_level: u32,
+        enemy_max_hp: u32,
+        enemy_current_hp: u32,
+        enemy_abilities: [crate::messages::PetBattleAbility; 3],
+        player_goes_first: bool,
+    },
+    /// `SMSG_PET_BATTLE_UPDATE`: one round resolved.
+    PetBattleUpdate {
+        player_ability_id: u32,
+        enemy_ability_id: u32,
+        player_acted_first: bool,
+        player_pet_current_hp: u32,
+        enemy_current_hp: u32,
+    },
+    /// `SMSG_PET_BATTLE_END`: the battle is over.
+    PetBattleEnd {
+        player_won: bool,
+    },
     /// `SMSG_DUEL_REQUESTED`: sent to both sides; we issued it when `challenger` is our guid.
     DuelRequested {
         arbiter: u64,
@@ -1540,6 +1566,9 @@ impl ServerPacket {
             ServerPacket::InstanceResetFailed { .. } => "SMSG_INSTANCE_RESET_FAILED".into(),
             ServerPacket::UpdateLastInstance { .. } => "SMSG_UPDATE_LAST_INSTANCE".into(),
             ServerPacket::UpdateInstanceOwnership { .. } => "SMSG_UPDATE_INSTANCE_OWNERSHIP".into(),
+            ServerPacket::PetBattleStart { .. } => "SMSG_PET_BATTLE_START".into(),
+            ServerPacket::PetBattleUpdate { .. } => "SMSG_PET_BATTLE_UPDATE".into(),
+            ServerPacket::PetBattleEnd { .. } => "SMSG_PET_BATTLE_END".into(),
             ServerPacket::DuelOutOfBounds => "SMSG_DUEL_OUTOFBOUNDS".into(),
             ServerPacket::DuelInBounds => "SMSG_DUEL_INBOUNDS".into(),
             ServerPacket::DuelComplete { .. } => "SMSG_DUEL_COMPLETE".into(),

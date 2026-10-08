@@ -99,6 +99,7 @@ pub(crate) mod object;
 pub use object::frame_kind_from_tag;
 mod party;
 mod pet;
+mod pet_battle;
 mod petition;
 mod pointer;
 mod pvp;
@@ -227,6 +228,7 @@ pub(crate) use model::Model;
 pub use model::{FontProbe, TextureProbe, TextureSizeProbe, WorldLocProjector};
 pub use party::{PartyMemberInfo, PartyRequest, PartyState, RaidMemberInfo, SavedInstanceInfo};
 pub use pet::{PetActionView, PetStats};
+pub use pet_battle::{PetBattleAbilityView, PetBattleState};
 pub use pvp::{decorated_name, pvp_name_global_keys, HonorState, InspectHonorData, RankTitle};
 pub use quest::{
     QuestAction, QuestItemView, QuestPanel, QuestRewardSpell, QuestSelect, QuestState,
@@ -552,6 +554,7 @@ impl UiScript {
         worldmap_arrow::install(&lua)?;
         shapeshift::install(&lua)?;
         pet::install(&lua)?;
+        pet_battle::install(&lua)?;
         gossip::install(&lua)?;
         merchant::install(&lua)?;
         bank::install(&lua)?;

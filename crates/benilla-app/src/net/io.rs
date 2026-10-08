@@ -1398,6 +1398,9 @@ fn writer_loop(
                     ClientCommand::ResetInstances => w.reset_instances(),
                     ClientCommand::DuelAccepted { arbiter } => w.duel_accepted(arbiter),
                     ClientCommand::DuelCancelled { arbiter } => w.duel_cancelled(arbiter),
+                    ClientCommand::PetBattleUseAbility { ability_id } => {
+                        w.pet_battle_use_ability(ability_id)
+                    }
                     ClientCommand::TogglePvp => w.toggle_pvp(),
                     ClientCommand::ToggleHelm => w.toggle_helm(),
                     ClientCommand::ToggleCloak => w.toggle_cloak(),

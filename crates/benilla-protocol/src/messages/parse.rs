@@ -10,8 +10,8 @@ use crate::wire::{
 use super::{
     action_bar, area_trigger, attack, auction, bank, battlefield, binder, broadcast, channel, chat,
     combat_log, death, duel, gameobject, gm_ticket, gossip, group, guild, instance, items, loot,
-    mail, meeting_stone, mirror_timer, monster_move, movement, opcode, page_text, pet, petition,
-    pose, progression, pvp, quest, social, spellbook, spells, stable, summon, tabard, taxi, trade,
+    mail, meeting_stone, mirror_timer, monster_move, movement, opcode, page_text, pet, pet_battle,
+    petition, pose, progression, pvp, quest, social, spellbook, spells, stable, summon, tabard, taxi, trade,
     trainer, tutorial, update_object, vendor, world_state, AttackSwingError, Character,
     CreatureQueryInfo, JumpInfo, MoveMode, ServerPacket, SpeedKind, SplineMode,
 };
@@ -1311,6 +1311,35 @@ fn parse_server_body(
         },
         opcode::SMSG_UPDATE_INSTANCE_OWNERSHIP => ServerPacket::UpdateInstanceOwnership {
             owns: instance::read_u32_body(&mut r)?,
+        },
+        opcode::SMSG_PET_BATTLE_START => {
+            let s = pet_battle::read_pet_battle_start(&mut r)?;
+            ServerPacket::PetBattleStart {
+                player_pet_name: s.player_pet_name,
+                player_pet_level: s.player_pet_level,
+                player_pet_max_hp: s.player_pet_max_hp,
+                player_pet_current_hp: s.player_pet_current_hp,
+                player_abilities: s.player_abilities,
+                enemy_name: s.enemy_name,
+                enemy_level: s.enemy_level,
+                enemy_max_hp: s.enemy_max_hp,
+                enemy_current_hp: s.enemy_current_hp,
+                enemy_abilities: s.enemy_abilities,
+                player_goes_first: s.player_goes_first,
+            }
+        }
+        opcode::SMSG_PET_BATTLE_UPDATE => {
+            let u = pet_battle::read_pet_battle_update(&mut r)?;
+            ServerPacket::PetBattleUpdate {
+                player_ability_id: u.player_ability_id,
+                enemy_ability_id: u.enemy_ability_id,
+                player_acted_first: u.player_acted_first,
+                player_pet_current_hp: u.player_pet_current_hp,
+                enemy_current_hp: u.enemy_current_hp,
+            }
+        }
+        opcode::SMSG_PET_BATTLE_END => ServerPacket::PetBattleEnd {
+            player_won: pet_battle::read_pet_battle_end(&mut r)?,
         },
         opcode::SMSG_DUEL_REQUESTED => {
             let req = duel::read_duel_requested(&mut r)?;

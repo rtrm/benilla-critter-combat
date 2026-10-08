@@ -1780,6 +1780,11 @@ pub(crate) enum ClientCommand {
     DuelCancelled {
         arbiter: u64,
     },
+    // ── Critter Combat ── (see the critter-combat repo's ARCHITECTURE.md)
+    /// `CMSG_PET_BATTLE_USE_ABILITY`.
+    PetBattleUseAbility {
+        ability_id: u32,
+    },
     // ── Social ── (added by name, removed by guid)
     /// `CMSG_FRIEND_LIST`: `ShowFriends()`.
     FriendListRequest,

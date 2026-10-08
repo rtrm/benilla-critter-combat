@@ -523,6 +523,9 @@ pub(crate) struct Model {
 
     /// The pet bar's ten slots and two bar-wide bits, replaced whole by every `SMSG_PET_SPELLS`.
     pub(crate) pet_bar: super::pet::PetBarState,
+    /// The Critter Combat battle panel's state (critter-combat ARCHITECTURE.md), replaced whole
+    /// by every `SMSG_PET_BATTLE_START`/`_UPDATE`/`_END`.
+    pub(crate) pet_battle: super::pet_battle::PetBattleState,
     /// 1-based slot indices `TogglePetAutocast` queued.
     pub(crate) pet_autocast_toggles: Vec<u32>,
     /// `PetStopAttack()` calls.
@@ -1236,6 +1239,7 @@ impl Model {
             tutorial_resets: 0,
             shapeshift_forms: Vec::new(),
             pet_bar: super::pet::PetBarState::default(),
+            pet_battle: super::pet_battle::PetBattleState::default(),
             pet_autocast_toggles: Vec::new(),
             pet_stop_attacks: 0,
             player_control: true,

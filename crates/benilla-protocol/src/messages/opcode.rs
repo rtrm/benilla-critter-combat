@@ -997,3 +997,15 @@ pub const SMSG_INSTANCE_RESET_FAILED: u16 = 0x031F; // 799
 pub const SMSG_UPDATE_LAST_INSTANCE: u16 = 0x0320; // 800
 /// Whether we hold any permanent bind: `u32` flag (`0x49e6c0`), half of `CanShowResetInstances()`.
 pub const SMSG_UPDATE_INSTANCE_OWNERSHIP: u16 = 0x032B; // 811
+
+// Critter Combat (see the critter-combat repo's ARCHITECTURE.md): this fork's only custom
+// opcodes, numbered to match the paired server fork's Opcodes_1_12_1.h exactly (827 is the real
+// game's last used opcode, SMSG_DEFENSE_MESSAGE).
+/// Use one of the active pet's three battle abilities: `u32 abilityId`.
+pub const CMSG_PET_BATTLE_USE_ABILITY: u16 = 829;
+/// A battle begins: both sides' full combatant info. See `messages::pet_battle`.
+pub const SMSG_PET_BATTLE_START: u16 = 830;
+/// One round resolved: both sides' ability used (0 if that side never got to act) and new HP.
+pub const SMSG_PET_BATTLE_UPDATE: u16 = 831;
+/// The battle is over: `bool playerWon`.
+pub const SMSG_PET_BATTLE_END: u16 = 832;

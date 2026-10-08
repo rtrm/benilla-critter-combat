@@ -35,6 +35,7 @@ mod packet;
 mod page_text;
 mod parse;
 mod pet;
+mod pet_battle;
 mod petition;
 mod pose;
 mod progression;
@@ -110,6 +111,10 @@ pub use death::{
 pub use duel::{
     duel_accepted, duel_cancelled, read_duel_complete, read_duel_countdown, read_duel_requested,
     read_duel_winner, DuelRequested, DuelWinner,
+};
+pub use pet_battle::{
+    pet_battle_use_ability, read_pet_battle_end, read_pet_battle_start, read_pet_battle_update,
+    PetBattleAbility, PetBattleStart, PetBattleUpdate,
 };
 pub use gameobject::{gameobj_use, gameobject_query, GameObjectQueryInfo};
 pub use gm_ticket::{

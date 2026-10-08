@@ -51,6 +51,9 @@ pub enum ScriptCall {
     PetAction(u32),
     /// `PetAttack` and the other one-shot orders, as their bar slot's packed word.
     PetOrder(u32),
+    /// `CritterBattleUseAbility(slot)` (critter-combat ARCHITECTURE.md, not a stock WoW call),
+    /// already resolved from the 1-based slot to the real ability id the wire needs.
+    CritterBattleUseAbility(u32),
 }
 
 /// The mode the four `TargetNearest*` shims hand the TAB cycler `0x493f60`, the only byte that

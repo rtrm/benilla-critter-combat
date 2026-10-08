@@ -32,6 +32,7 @@ mod mail;
 mod meeting_stone;
 mod names;
 mod pet;
+mod pet_battle;
 mod petition;
 mod player_flags;
 mod pose;
