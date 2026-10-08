@@ -17,6 +17,7 @@ use crate::net::NetHandlerApp;
 struct AbilitySlot {
     id: u32,
     name: String,
+    icon: String,
     effect_type: u8,
 }
 
@@ -61,6 +62,7 @@ fn on_start(In(ev): In<SessionEvent>, mut battle: ResMut<PetBattle>) {
         *slot = AbilitySlot {
             id: ability.id,
             name: ability.name,
+            icon: ability.icon,
             effect_type: ability.effect_type,
         };
     }
@@ -115,6 +117,7 @@ fn feed_pet_battle(script: Option<NonSendMut<UiScript>>, battle: Res<PetBattle>)
             PetBattleAbilityView {
                 id: slot.id,
                 name: slot.name.clone(),
+                icon: slot.icon.clone(),
                 effect_type: slot.effect_type,
             }
         }),

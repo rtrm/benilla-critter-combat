@@ -12,6 +12,8 @@ use crate::wire::{read_cstring, read_u32_le, read_u8};
 pub struct PetBattleAbility {
     pub id: u32,
     pub name: String,
+    /// Bare `Interface\Icons\` basename; prepend the folder before loading it.
+    pub icon: String,
     /// 1 DAMAGE, 2 HIT_CHANCE_DEBUFF (enemy), 3 DAMAGE_TAKEN_SHIELD (self).
     pub effect_type: u8,
 }
@@ -20,6 +22,7 @@ fn read_ability(r: &mut impl Read) -> io::Result<PetBattleAbility> {
     Ok(PetBattleAbility {
         id: read_u32_le(r)?,
         name: read_cstring(r)?,
+        icon: read_cstring(r)?,
         effect_type: read_u8(r)?,
     })
 }
@@ -111,9 +114,11 @@ pub fn pet_battle_use_ability(ability_id: u32) -> Vec<u8> {
 mod tests {
     use super::*;
 
-    fn ability_bytes(id: u32, name: &str, effect_type: u8) -> Vec<u8> {
+    fn ability_bytes(id: u32, name: &str, icon: &str, effect_type: u8) -> Vec<u8> {
         let mut v = id.to_le_bytes().to_vec();
         v.extend_from_slice(name.as_bytes());
+        v.push(0);
+        v.extend_from_slice(icon.as_bytes());
         v.push(0);
         v.push(effect_type);
         v
@@ -126,22 +131,23 @@ mod tests {
         body.extend_from_slice(&5u32.to_le_bytes()); // level
         body.extend_from_slice(&45u32.to_le_bytes()); // maxHp
         body.extend_from_slice(&45u32.to_le_bytes()); // currentHp
-        body.extend(ability_bytes(63000, "Nibble", 1));
-        body.extend(ability_bytes(63001, "Dust Cloud", 2));
-        body.extend(ability_bytes(63002, "Burrow", 3));
+        body.extend(ability_bytes(63000, "Nibble", "INV_Misc_MonsterClaw_04", 1));
+        body.extend(ability_bytes(63001, "Dust Cloud", "Spell_Nature_Cyclone", 2));
+        body.extend(ability_bytes(63002, "Burrow", "Spell_Nature_StoneClawTotem", 3));
         body.extend_from_slice(b"Prairie Dog\0");
         body.extend_from_slice(&3u32.to_le_bytes()); // level
         body.extend_from_slice(&35u32.to_le_bytes()); // maxHp
         body.extend_from_slice(&35u32.to_le_bytes()); // currentHp
-        body.extend(ability_bytes(63000, "Nibble", 1));
-        body.extend(ability_bytes(63001, "Dust Cloud", 2));
-        body.extend(ability_bytes(63002, "Burrow", 3));
+        body.extend(ability_bytes(63000, "Nibble", "INV_Misc_MonsterClaw_04", 1));
+        body.extend(ability_bytes(63001, "Dust Cloud", "Spell_Nature_Cyclone", 2));
+        body.extend(ability_bytes(63002, "Burrow", "Spell_Nature_StoneClawTotem", 3));
         body.push(1); // playerGoesFirst
 
         let parsed = read_pet_battle_start(&mut &body[..]).unwrap();
         assert_eq!(parsed.player_pet_name, "Fluffy");
         assert_eq!(parsed.player_pet_level, 5);
         assert_eq!(parsed.player_abilities[0].name, "Nibble");
+        assert_eq!(parsed.player_abilities[0].icon, "INV_Misc_MonsterClaw_04");
         assert_eq!(parsed.player_abilities[1].effect_type, 2);
         assert_eq!(parsed.enemy_name, "Prairie Dog");
         assert_eq!(parsed.enemy_abilities[2].id, 63002);

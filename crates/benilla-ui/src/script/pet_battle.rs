@@ -15,6 +15,8 @@ pub struct PetBattleAbilityView {
     /// The real ability id `CritterBattleUseAbility` sends on the wire - not the 1-based slot.
     pub id: u32,
     pub name: String,
+    /// Bare `Interface\Icons\` basename; prepend the folder before loading it.
+    pub icon: String,
     /// 1 DAMAGE, 2 HIT_CHANCE_DEBUFF (enemy), 3 DAMAGE_TAKEN_SHIELD (self); 0 for an empty slot.
     pub effect_type: u8,
 }
@@ -74,7 +76,8 @@ pub(super) fn install(lua: &Lua) -> mlua::Result<()> {
         })?,
     )?;
 
-    // `CritterBattleGetAbility(slot)`, a 1-based ability slot: name, then effect type (0 empty).
+    // `CritterBattleGetAbility(slot)`, a 1-based ability slot: name, icon basename, effect type
+    // (0 empty).
     g.set(
         "CritterBattleGetAbility",
         lua.create_function(|lua, i: u32| {
@@ -83,8 +86,8 @@ pub(super) fn install(lua: &Lua) -> mlua::Result<()> {
                 .ok()
                 .and_then(|n| model.pet_battle.player_abilities.get(n));
             Ok(match ability {
-                Some(a) => (a.name.clone(), a.effect_type),
-                None => (String::new(), 0),
+                Some(a) => (a.name.clone(), a.icon.clone(), a.effect_type),
+                None => (String::new(), String::new(), 0),
             })
         })?,
     )?;

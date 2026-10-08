@@ -8,24 +8,28 @@
         mirrored on the *opposite* side of MainMenuBar from the real PetActionBarFrame (which
         anchors BOTTOMLEFT, offset 40,112 off the bar's own BOTTOMLEFT - see PetActionBarFrame.xml)
         rather than reusing that same frame or spot, so a Hunter or Warlock mid-battle still has
-        their own real pet command bar fully visible alongside this one. No icons yet (the design
-        note defers "the specific icon/asset choices for the ability action bar" to a later pass,
-        once the abilities themselves are authored past this pilot's three placeholders) - each
-        button is a plain stock button skin with its ability's name as its label.
+        their own real pet command bar fully visible alongside this one. HP shows on each pet's
+        own real health bar, not here (PetBattleCombat.cpp borrows Health/MaxHealth for the
+        battle's duration) - this panel is just the three ability icons.
     -->
 
     <Script><![CDATA[
+        -- Ability names, by 1-based slot, for the icon buttons' hover tooltip (CritterBattleGetAbility
+        -- also returns the name, but only the icon is drawn on the button itself).
+        CritterBattleAbilityNames = { "", "", "" }
+
         function CritterBattleFrame_Update()
             if CritterBattleIsActive() then
-                local pname, plevel, php, pmaxhp, ename, elevel, ehp, emaxhp = CritterBattleGetCombatants()
-                getglobal("CritterBattleFramePlayerText"):SetText(pname.." (Lv "..plevel..")  "..php.."/"..pmaxhp.." HP")
-                getglobal("CritterBattleFrameEnemyText"):SetText(ename.." (Lv "..elevel..")  "..ehp.."/"..emaxhp.." HP")
+                local pname, plevel, _, _, ename, elevel = CritterBattleGetCombatants()
+                getglobal("CritterBattleFramePlayerText"):SetText(pname.." (Lv "..plevel..")")
+                getglobal("CritterBattleFrameEnemyText"):SetText(ename.." (Lv "..elevel..")")
                 for i = 1, 3 do
-                    local name = CritterBattleGetAbility(i)
+                    local name, icon = CritterBattleGetAbility(i)
+                    CritterBattleAbilityNames[i] = name
                     local button = getglobal("CritterBattleFrameAbility"..i)
                     if name ~= "" then
                         button:Show()
-                        getglobal("CritterBattleFrameAbility"..i.."Text"):SetText(name)
+                        getglobal("CritterBattleFrameAbility"..i.."Icon"):SetTexture("Interface\\Icons\\"..icon)
                     else
                         button:Hide()
                     end
@@ -35,10 +39,24 @@
                 CritterBattleFrame:Hide()
             end
         end
+
+        function CritterBattleAbilityButton_OnClick()
+            CritterBattleUseAbility(this:GetID())
+        end
+
+        function CritterBattleAbilityButton_OnEnter()
+            GameTooltip:SetOwner(this, "ANCHOR_RIGHT")
+            GameTooltip:SetText(CritterBattleAbilityNames[this:GetID()] or "")
+            GameTooltip:Show()
+        end
+
+        function CritterBattleAbilityButton_OnLeave()
+            GameTooltip:Hide()
+        end
     ]]></Script>
 
     <Frame name="CritterBattleFrame" parent="UIParent" frameStrata="LOW" hidden="true">
-        <Size><AbsDimension x="200" y="92"/></Size>
+        <Size><AbsDimension x="150" y="92"/></Size>
         <Anchors>
             <Anchor point="BOTTOMLEFT" relativeTo="MainMenuBar" relativePoint="BOTTOMRIGHT">
                 <Offset><AbsDimension x="40" y="112"/></Offset>
@@ -66,92 +84,80 @@
             </Layer>
         </Layers>
         <Frames>
-            <Button name="$parentAbility1">
-                <Size><AbsDimension x="58" y="22"/></Size>
+            <Button name="$parentAbility1" id="1">
+                <Size><AbsDimension x="36" y="36"/></Size>
                 <Anchors>
                     <Anchor point="BOTTOMLEFT"><Offset><AbsDimension x="8" y="8"/></Offset></Anchor>
                 </Anchors>
-                <NormalTexture file="Interface\Buttons\UI-Panel-Button-Up">
-                    <TexCoords left="0" right="0.625" top="0" bottom="0.6875"/>
-                </NormalTexture>
-                <PushedTexture file="Interface\Buttons\UI-Panel-Button-Down">
-                    <TexCoords left="0" right="0.625" top="0" bottom="0.6875"/>
-                </PushedTexture>
-                <HighlightTexture file="Interface\Buttons\UI-Panel-Button-Highlight" alphaMode="ADD">
-                    <TexCoords left="0" right="0.625" top="0" bottom="0.6875"/>
-                </HighlightTexture>
                 <Layers>
-                    <Layer level="OVERLAY">
-                        <FontString name="$parentText" inherits="GameFontHighlightSmall">
+                    <Layer level="ARTWORK">
+                        <Texture name="$parentIcon">
                             <Anchors>
                                 <Anchor point="TOPLEFT"><Offset><AbsDimension x="2" y="-2"/></Offset></Anchor>
                                 <Anchor point="BOTTOMRIGHT"><Offset><AbsDimension x="-2" y="2"/></Offset></Anchor>
                             </Anchors>
-                        </FontString>
+                        </Texture>
                     </Layer>
                 </Layers>
+                <NormalTexture file="Interface\Buttons\UI-Quickslot2"/>
+                <PushedTexture file="Interface\Buttons\UI-Quickslot-Depress"/>
+                <HighlightTexture file="Interface\Buttons\ButtonHilight-Square" alphaMode="ADD"/>
                 <Scripts>
-                    <OnClick>CritterBattleUseAbility(1)</OnClick>
+                    <OnClick>CritterBattleAbilityButton_OnClick()</OnClick>
+                    <OnEnter>CritterBattleAbilityButton_OnEnter()</OnEnter>
+                    <OnLeave>CritterBattleAbilityButton_OnLeave()</OnLeave>
                 </Scripts>
             </Button>
-            <Button name="$parentAbility2">
-                <Size><AbsDimension x="58" y="22"/></Size>
+            <Button name="$parentAbility2" id="2">
+                <Size><AbsDimension x="36" y="36"/></Size>
                 <Anchors>
                     <Anchor point="LEFT" relativeTo="$parentAbility1" relativePoint="RIGHT">
                         <Offset><AbsDimension x="4" y="0"/></Offset>
                     </Anchor>
                 </Anchors>
-                <NormalTexture file="Interface\Buttons\UI-Panel-Button-Up">
-                    <TexCoords left="0" right="0.625" top="0" bottom="0.6875"/>
-                </NormalTexture>
-                <PushedTexture file="Interface\Buttons\UI-Panel-Button-Down">
-                    <TexCoords left="0" right="0.625" top="0" bottom="0.6875"/>
-                </PushedTexture>
-                <HighlightTexture file="Interface\Buttons\UI-Panel-Button-Highlight" alphaMode="ADD">
-                    <TexCoords left="0" right="0.625" top="0" bottom="0.6875"/>
-                </HighlightTexture>
                 <Layers>
-                    <Layer level="OVERLAY">
-                        <FontString name="$parentText" inherits="GameFontHighlightSmall">
+                    <Layer level="ARTWORK">
+                        <Texture name="$parentIcon">
                             <Anchors>
                                 <Anchor point="TOPLEFT"><Offset><AbsDimension x="2" y="-2"/></Offset></Anchor>
                                 <Anchor point="BOTTOMRIGHT"><Offset><AbsDimension x="-2" y="2"/></Offset></Anchor>
                             </Anchors>
-                        </FontString>
+                        </Texture>
                     </Layer>
                 </Layers>
+                <NormalTexture file="Interface\Buttons\UI-Quickslot2"/>
+                <PushedTexture file="Interface\Buttons\UI-Quickslot-Depress"/>
+                <HighlightTexture file="Interface\Buttons\ButtonHilight-Square" alphaMode="ADD"/>
                 <Scripts>
-                    <OnClick>CritterBattleUseAbility(2)</OnClick>
+                    <OnClick>CritterBattleAbilityButton_OnClick()</OnClick>
+                    <OnEnter>CritterBattleAbilityButton_OnEnter()</OnEnter>
+                    <OnLeave>CritterBattleAbilityButton_OnLeave()</OnLeave>
                 </Scripts>
             </Button>
-            <Button name="$parentAbility3">
-                <Size><AbsDimension x="58" y="22"/></Size>
+            <Button name="$parentAbility3" id="3">
+                <Size><AbsDimension x="36" y="36"/></Size>
                 <Anchors>
                     <Anchor point="LEFT" relativeTo="$parentAbility2" relativePoint="RIGHT">
                         <Offset><AbsDimension x="4" y="0"/></Offset>
                     </Anchor>
                 </Anchors>
-                <NormalTexture file="Interface\Buttons\UI-Panel-Button-Up">
-                    <TexCoords left="0" right="0.625" top="0" bottom="0.6875"/>
-                </NormalTexture>
-                <PushedTexture file="Interface\Buttons\UI-Panel-Button-Down">
-                    <TexCoords left="0" right="0.625" top="0" bottom="0.6875"/>
-                </PushedTexture>
-                <HighlightTexture file="Interface\Buttons\UI-Panel-Button-Highlight" alphaMode="ADD">
-                    <TexCoords left="0" right="0.625" top="0" bottom="0.6875"/>
-                </HighlightTexture>
                 <Layers>
-                    <Layer level="OVERLAY">
-                        <FontString name="$parentText" inherits="GameFontHighlightSmall">
+                    <Layer level="ARTWORK">
+                        <Texture name="$parentIcon">
                             <Anchors>
                                 <Anchor point="TOPLEFT"><Offset><AbsDimension x="2" y="-2"/></Offset></Anchor>
                                 <Anchor point="BOTTOMRIGHT"><Offset><AbsDimension x="-2" y="2"/></Offset></Anchor>
                             </Anchors>
-                        </FontString>
+                        </Texture>
                     </Layer>
                 </Layers>
+                <NormalTexture file="Interface\Buttons\UI-Quickslot2"/>
+                <PushedTexture file="Interface\Buttons\UI-Quickslot-Depress"/>
+                <HighlightTexture file="Interface\Buttons\ButtonHilight-Square" alphaMode="ADD"/>
                 <Scripts>
-                    <OnClick>CritterBattleUseAbility(3)</OnClick>
+                    <OnClick>CritterBattleAbilityButton_OnClick()</OnClick>
+                    <OnEnter>CritterBattleAbilityButton_OnEnter()</OnEnter>
+                    <OnLeave>CritterBattleAbilityButton_OnLeave()</OnLeave>
                 </Scripts>
             </Button>
         </Frames>
