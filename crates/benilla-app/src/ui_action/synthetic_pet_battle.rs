@@ -30,7 +30,7 @@ pub(crate) fn install(catalog: &mut SpellCatalog) {
         SpellDisplay {
             id: 64000,
             name: "Engage Critter Combat".to_string(),
-            icon: Some("Interface\\Icons\\Ability_DualWield".to_string()),
+            icon: Some("Interface\\Icons\\Spell_Magic_PolymorphChicken".to_string()),
             effects: [EFFECT_DUMMY, 0, 0],
             implicit_target_a1: TARGET_UNIT_ENEMY,
             ..Default::default()
@@ -40,7 +40,7 @@ pub(crate) fn install(catalog: &mut SpellCatalog) {
         64001,
         SpellDisplay {
             id: 64001,
-            name: "Capture".to_string(),
+            name: "Capture Critter".to_string(),
             icon: Some("Interface\\Icons\\Ability_Ensnare".to_string()),
             effects: [EFFECT_DUMMY, 0, 0],
             implicit_target_a1: TARGET_UNIT_ENEMY,
