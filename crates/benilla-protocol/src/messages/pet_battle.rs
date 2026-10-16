@@ -5,7 +5,7 @@
 
 use std::io::{self, Read};
 
-use crate::wire::{read_cstring, read_u32_le, read_u64_le, read_u8};
+use crate::wire::{read_cstring, read_u32_le, read_u8};
 
 /// One ability as the client needs it to draw the battle action bar.
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -43,12 +43,6 @@ pub struct PetBattleStart {
     pub enemy_abilities: [PetBattleAbility; 3],
 
     pub player_goes_first: bool,
-
-    /// Raw guids for each combatant, so the client can resolve them to the entities it's already
-    /// streaming - used purely for cosmetic lunge-on-attack animation (critter-combat
-    /// ARCHITECTURE.md), never anything server-authoritative.
-    pub player_pet_guid: u64,
-    pub enemy_guid: u64,
 }
 
 /// Read `SMSG_PET_BATTLE_START`: the player's side (name, level, maxHp, currentHp, 3 abilities),
@@ -67,8 +61,6 @@ pub fn read_pet_battle_start(r: &mut impl Read) -> io::Result<PetBattleStart> {
     let enemy_abilities = [read_ability(r)?, read_ability(r)?, read_ability(r)?];
 
     let player_goes_first = read_u8(r)? != 0;
-    let player_pet_guid = read_u64_le(r)?;
-    let enemy_guid = read_u64_le(r)?;
 
     Ok(PetBattleStart {
         player_pet_name,
@@ -82,8 +74,6 @@ pub fn read_pet_battle_start(r: &mut impl Read) -> io::Result<PetBattleStart> {
         enemy_current_hp,
         enemy_abilities,
         player_goes_first,
-        player_pet_guid,
-        enemy_guid,
     })
 }
 
@@ -152,8 +142,6 @@ mod tests {
         body.extend(ability_bytes(63001, "Dust Cloud", "Spell_Nature_Cyclone", 2));
         body.extend(ability_bytes(63002, "Burrow", "Spell_Nature_StoneClawTotem", 3));
         body.push(1); // playerGoesFirst
-        body.extend_from_slice(&0x1122334455u64.to_le_bytes()); // playerPetGuid
-        body.extend_from_slice(&0x6677889900u64.to_le_bytes()); // enemyGuid
 
         let parsed = read_pet_battle_start(&mut &body[..]).unwrap();
         assert_eq!(parsed.player_pet_name, "Fluffy");
@@ -164,8 +152,6 @@ mod tests {
         assert_eq!(parsed.enemy_name, "Prairie Dog");
         assert_eq!(parsed.enemy_abilities[2].id, 63002);
         assert!(parsed.player_goes_first);
-        assert_eq!(parsed.player_pet_guid, 0x1122334455);
-        assert_eq!(parsed.enemy_guid, 0x6677889900);
     }
 
     #[test]

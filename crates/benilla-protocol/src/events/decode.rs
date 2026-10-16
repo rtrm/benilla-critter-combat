@@ -586,8 +586,6 @@ pub fn decode(packet: ServerPacket) -> Vec<SessionEvent> {
             enemy_current_hp,
             enemy_abilities,
             player_goes_first,
-            player_pet_guid,
-            enemy_guid,
         } => vec![SessionEvent::PetBattleStart {
             player_pet_name,
             player_pet_level,
@@ -600,8 +598,6 @@ pub fn decode(packet: ServerPacket) -> Vec<SessionEvent> {
             enemy_current_hp,
             enemy_abilities,
             player_goes_first,
-            player_pet_guid,
-            enemy_guid,
         }],
         ServerPacket::PetBattleUpdate {
             player_ability_id,

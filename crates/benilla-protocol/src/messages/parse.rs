@@ -1326,8 +1326,6 @@ fn parse_server_body(
                 enemy_current_hp: s.enemy_current_hp,
                 enemy_abilities: s.enemy_abilities,
                 player_goes_first: s.player_goes_first,
-                player_pet_guid: s.player_pet_guid,
-                enemy_guid: s.enemy_guid,
             }
         }
         opcode::SMSG_PET_BATTLE_UPDATE => {
