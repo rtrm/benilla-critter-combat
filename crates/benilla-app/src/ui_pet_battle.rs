@@ -34,6 +34,10 @@ struct PetBattle {
     enemy_level: u32,
     enemy_hp: u32,
     enemy_max_hp: u32,
+    /// Raw guids cached from `PetBattleStart`, resolved through `GuidIndex` on each `PetBattleUpdate`
+    /// for the lunge-on-attack animation - never anything server-authoritative.
+    player_pet_guid: u64,
+    enemy_guid: u64,
 }
 
 fn on_start(In(ev): In<SessionEvent>, mut battle: ResMut<PetBattle>) {
@@ -49,6 +53,8 @@ fn on_start(In(ev): In<SessionEvent>, mut battle: ResMut<PetBattle>) {
         enemy_current_hp,
         enemy_abilities: _, // the enemy's kit is resolved server-side; the player never sees it
         player_goes_first: _, // turn order is server-authoritative; nothing here depends on it
+        player_pet_guid,
+        enemy_guid,
     } = ev
     else {
         return;
@@ -70,10 +76,21 @@ fn on_start(In(ev): In<SessionEvent>, mut battle: ResMut<PetBattle>) {
     battle.enemy_level = enemy_level;
     battle.enemy_hp = enemy_current_hp;
     battle.enemy_max_hp = enemy_max_hp;
+    battle.player_pet_guid = player_pet_guid;
+    battle.enemy_guid = enemy_guid;
 }
 
-fn on_update(In(ev): In<SessionEvent>, mut battle: ResMut<PetBattle>) {
+fn on_update(
+    In(ev): In<SessionEvent>,
+    mut battle: ResMut<PetBattle>,
+    mut commands: Commands,
+    guid_index: Res<crate::net::GuidIndex>,
+    transforms: Query<&GlobalTransform>,
+    time: Res<Time>,
+) {
     let SessionEvent::PetBattleUpdate {
+        player_ability_id,
+        enemy_ability_id,
         player_pet_current_hp,
         enemy_current_hp,
         ..
@@ -83,6 +100,29 @@ fn on_update(In(ev): In<SessionEvent>, mut battle: ResMut<PetBattle>) {
     };
     battle.player_hp = player_pet_current_hp;
     battle.enemy_hp = enemy_current_hp;
+
+    // Cosmetic lunge-on-attack (ARCHITECTURE.md): whichever side actually got to act this round
+    // (a 0 ability id means it never did - the round already ended before its turn) briefly
+    // lunges toward its live opponent. GuidIndex resolves the guids cached from BattleStart to
+    // the entities the normal unit-streaming pipeline is already rendering.
+    let player_entity = guid_index.0.get(&battle.player_pet_guid).copied();
+    let enemy_entity = guid_index.0.get(&battle.enemy_guid).copied();
+    let now = time.elapsed_secs();
+
+    if player_ability_id != 0 {
+        if let (Some(attacker), Some(defender)) = (player_entity, enemy_entity) {
+            if let Ok(target) = transforms.get(defender) {
+                crate::battle_lunge::lunge_towards(&mut commands, attacker, target.translation(), now);
+            }
+        }
+    }
+    if enemy_ability_id != 0 {
+        if let (Some(attacker), Some(defender)) = (enemy_entity, player_entity) {
+            if let Ok(target) = transforms.get(defender) {
+                crate::battle_lunge::lunge_towards(&mut commands, attacker, target.translation(), now);
+            }
+        }
+    }
 }
 
 fn on_end(In(ev): In<SessionEvent>, mut battle: ResMut<PetBattle>) {

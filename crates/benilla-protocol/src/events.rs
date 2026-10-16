@@ -956,6 +956,10 @@ pub enum SessionEvent {
         enemy_current_hp: u32,
         enemy_abilities: [crate::messages::PetBattleAbility; 3],
         player_goes_first: bool,
+        /// Raw guids for each combatant - lunge-on-attack animation only, never anything
+        /// server-authoritative.
+        player_pet_guid: u64,
+        enemy_guid: u64,
     },
     /// One pet battle round resolved (`SMSG_PET_BATTLE_UPDATE`).
     PetBattleUpdate {

@@ -1021,6 +1021,8 @@ pub enum ServerPacket {
         enemy_current_hp: u32,
         enemy_abilities: [crate::messages::PetBattleAbility; 3],
         player_goes_first: bool,
+        player_pet_guid: u64,
+        enemy_guid: u64,
     },
     /// `SMSG_PET_BATTLE_UPDATE`: one round resolved.
     PetBattleUpdate {
